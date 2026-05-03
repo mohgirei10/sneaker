@@ -1,32 +1,68 @@
 "use client";
 
-import { motion, AnimatePresence, useTransform, useScroll, useMotionValue } from "framer-motion";
-import { useState, useEffect, useCallback } from "react";
-import { ChevronLeft, ChevronRight, ShoppingCart, Menu, X } from "lucide-react";
+import { motion, AnimatePresence, useTransform, useScroll, useMotionValue, useSpring } from "framer-motion";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { ChevronLeft, ChevronRight, ShoppingCart, Menu, X, Eye, Info, Trash2 } from "lucide-react";
 
+import { Variants } from "framer-motion"; // Add this to your imports
+
+// 1. Explicitly type as Variants
+const fadeUp: Variants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    transition: { 
+      duration: 1, 
+      // The Bezier curve needs to be a tuple or explicitly recognized
+      ease: [0.22, 1, 0.36, 1] 
+    } 
+  }
+};
+
+// 2. Or use "as const" for the entire object
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { 
+      staggerChildren: 0.1, 
+      delayChildren: 0.3 
+    }
+  }
+} as const;
+
+
+// --- TYPES ---
+type Shoe = { name: string; price: string; img: string };
+type CartItem = Shoe & { id: string; size: string };
+
+// --- COMPONENTS ---
 function Hotspot({ top, left, title, description }: { top: number; left: number; title: string; description: string; }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div className="absolute z-50" style={{ top: `${top}%`, left: `${left}%` }}>
+    <div className="absolute z-40" style={{ top: `${top}%`, left: `${left}%` }}>
       <button
-        aria-label={`Info about ${title}`}
-        className="relative h-8 w-8 flex items-center justify-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full"
+        className="relative h-6 w-6 md:h-8 md:w-8 flex items-center justify-center cursor-pointer focus:outline-none group"
+        onClick={() => setIsOpen(!isOpen)}
         onMouseEnter={() => setIsOpen(true)}
         onMouseLeave={() => setIsOpen(false)}
       >
         <div className="absolute h-full w-full bg-blue-500/30 rounded-full animate-ping" />
-        <div className="h-3 w-3 bg-white rounded-full shadow-[0_0_10px_#fff] z-10 border border-blue-500" />
-        
+        <motion.div 
+          animate={{ scale: isOpen ? 1.2 : 1 }}
+          className="h-2 w-2 md:h-3 md:w-3 bg-white rounded-full shadow-[0_0_15px_#fff] z-10 border border-blue-500" 
+        />
         <AnimatePresence>
           {isOpen && (
             <motion.div
-              initial={{ opacity: 0, y: 10, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 10, scale: 0.9 }}
-              className="absolute bottom-12 left-1/2 -translate-x-1/2 w-64 p-5 bg-black/90 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl text-white"
+              initial={{ opacity: 0, scale: 0.9, y: 10, x: "-50%" }}
+              animate={{ opacity: 1, scale: 1, y: 0, x: "-50%" }}
+              exit={{ opacity: 0, scale: 0.9, y: 10, x: "-50%" }}
+              className="absolute bottom-10 left-1/2 w-48 md:w-64 p-4 bg-black/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl text-white pointer-events-none"
             >
-              <h4 className="font-bold text-xs uppercase tracking-widest text-blue-400 mb-2">{title}</h4>
-              <p className="text-sm text-gray-300">{description}</p>
+              <h4 className="font-bold text-[10px] md:text-xs uppercase tracking-widest text-blue-400 mb-1">{title}</h4>
+              <p className="text-xs md:text-sm text-gray-300 leading-relaxed">{description}</p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -42,381 +78,306 @@ export default function Home() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success">("idle");
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [cartItems, setCartItems] = useState<any[]>([]);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [selectedQuickView, setSelectedQuickView] = useState<Shoe | null>(null);
 
+  const autoSlideTimer = useRef<NodeJS.Timeout | null>(null);
   const { scrollY } = useScroll();
-  const yParallax = useTransform(scrollY, [0, 1000], [0, 300]);
+  
+  // Smoother Spring Physics for Parallax
+  const smoothY = useSpring(useTransform(scrollY, [0, 1000], [0, 150]), { stiffness: 100, damping: 30 });
   const mouseX = useMotionValue(0);
-  const rotateX = useTransform(mouseX, [-500, 500], [12, -12]);
-  const rotateY = useTransform(mouseX, [-500, 500], [-12, 12]);
+  const rotateX = useSpring(useTransform(mouseX, [-500, 500], [7, -7]), { stiffness: 50, damping: 20 });
+  const rotateY = useSpring(useTransform(mouseX, [-500, 500], [-7, 7]), { stiffness: 50, damping: 20 });
 
- const shoes = [
-    { name: "Phantom Black", price: "$240", img: "img1.jpg", bg:"img1.jpg"  },
-    { name: "Neon Volt", price: "$260", img: "img2.jpg", bg:"img2.jpg" },
-    { name: "Arctic White", price: "$220", img: "img3.jpg",bg:"img3.jpg" },
-    { name: "Midnight Blue", price: "$250", img: "img4.jpg", bg:"img4.jpg" },
-    { name: "Crimson Red", price: "$245", img: "img5.jpg", bg:"img5.jpg" },
-    { name: "Cyber Grey", price: "$270", img: "img6.jpg", bg:"img6.jpg" },
-    { name: "Phantom Black", price: "$240", img: "img7.jpg", bg:"img7.jpg" },
-    { name: "Neon Volt", price: "$260", img: "img8.jpg", bg:"img8.jpg" },
-    { name: "Arctic White", price: "$220", img: "img9.jpg", bg:"img9.jpg" },
-    { name: "Midnight Blue", price: "$250", img: "img10.jpg", bg:"img10.jpg" },
-    { name: "Crimson Red", price: "$245", img: "img11.jpg", bg:"img11.jpg" },
-    { name: "Cyber Grey", price: "$270", img: "img12.jpg", bg:"img12.jpg" }
-    
+  const shoes: Shoe[] = [
+      { name: "Phantom Black", price: "$240", img: "img1.jpg"  },
+
+    { name: "Neon Volt", price: "$260", img: "img2.jpg" },
+
+    { name: "Arctic White", price: "$220", img: "img3.jpg" },
+
+    { name: "Midnight Blue", price: "$250", img: "img4.jpg" },
+
+    { name: "Crimson Red", price: "$245", img: "img5.jpg" },
+
+    { name: "Cyber Grey", price: "$270", img: "img6.jpg"},
+
+    { name: "Phantom Black", price: "$240", img: "img7.jpg" },
+
+    { name: "Neon Volt", price: "$260", img: "img8.jpg" },
+
+    { name: "Arctic White", price: "$220", img: "img9.jpg" },
+
+    { name: "Midnight Blue", price: "$250", img: "img10.jpg" },
+
+    { name: "Crimson Red", price: "$245", img: "img11.jpg" },
+
+    { name: "Cyber Grey", price: "$270", img: "img12.jpg" }
   ];
 
   const sizes = ["US 7", "US 8", "US 9", "US 10", "US 11", "US 12"];
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    mouseX.set(e.clientX - window.innerWidth / 2);
-  };
+  const nextSlide = useCallback(() => setCurrentIndex((prev) => (prev + 1) % shoes.length), [shoes.length]);
+  const prevSlide = () => { setCurrentIndex((prev) => (prev - 1 + shoes.length) % shoes.length); resetAutoSlide(); };
+  const startAutoSlide = useCallback(() => { autoSlideTimer.current = setInterval(nextSlide, 5000); }, [nextSlide]);
+  const resetAutoSlide = useCallback(() => { if (autoSlideTimer.current) clearInterval(autoSlideTimer.current); startAutoSlide(); }, [startAutoSlide]);
 
-  const addToCart = () => {
-    if (!selectedSize) {
-      alert("Please select a size first!");
-      return;
-    }
-    const newItem = { ...shoes[currentIndex], size: selectedSize };
-    setCartItems([...cartItems, newItem]);
+  const addToCart = (shoe: Shoe) => {
+    if (!selectedSize) return;
+    setCartItems([...cartItems, { ...shoe, size: selectedSize, id: Math.random().toString(36).substr(2, 9) }]);
     setIsCartOpen(true);
+    setSelectedSize(null);
+    setSelectedQuickView(null);
   };
 
-  const nextSlide = useCallback(() => {
-    setCurrentIndex((prev) => (prev + 1) % shoes.length);
-  }, [shoes.length]);
-
-  const prevSlide = () => {
-    setCurrentIndex((prev) => (prev - 1 + shoes.length) % shoes.length);
-  };
-
-  const handleWaitlistSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-    setStatus("loading");
-    await new Promise((r) => setTimeout(r, 1800));
-    setStatus("success");
-    setEmail("");
-    setTimeout(() => setStatus("idle"), 4000);
-  };
-
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => { setMounted(true); startAutoSlide(); }, [startAutoSlide]);
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-  useEffect(() => {
-    const timer = setInterval(nextSlide, 4000);
-    return () => clearInterval(timer);
-  }, [nextSlide]);
 
   if (!mounted) return null;
 
   return (
-    <main className="relative bg-[#050505] text-white overflow-x-hidden" lang="en">
-      <a href="#main-content" className="sr-only focus:not-sr-only fixed top-4 left-4 bg-blue-600 px-6 py-3 rounded-full z-100">
-        Skip to main content
-      </a>
-
-      {/* HERO SECTION */}
-      <section className="relative min-h-screen flex items-center justify-center" onMouseMove={handleMouseMove} id="main-content">
-        <nav className={`fixed top-0 left-0 right-0 z-50 px-6 py-5 flex justify-between items-center transition-all ${isScrolled ? 'bg-black/95 backdrop-blur-md' : ''}`} aria-label="Main navigation">
-          <div className="text-2xl font-black tracking-tighter italic">SNEAK<span className="text-blue-600">ER.</span></div>
-          
-          <div className="hidden md:flex gap-8 text-sm uppercase tracking-widest">
-            <a href="#" className="hover:text-blue-500">Home</a>
-            <a href="#premium-collection" className="hover:text-blue-500">Collection</a>
-            <a href="#" className="hover:text-blue-500">Contact</a>
-          </div>
-
-
-          <div className="flex items-center gap-4">
-            <button onClick={() => setIsCartOpen(true)} aria-label={`Cart (${cartItems.length} items)`} className="relative p-3 focus:ring-2 focus:ring-blue-500 rounded-full">
-              <ShoppingCart size={24} />
-              {cartItems.length > 0 && <span className="absolute -top-1 -right-1 bg-blue-600 text-xs w-5 h-5 rounded-full flex items-center justify-center">{cartItems.length}</span>}
-            </button>
-            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="md:hidden" aria-label="Toggle menu">
-              {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
-            </button>
-          </div>
-        </nav>
-
-{/* Parallax Background Label */}
-      <div className="absolute inset-0 flex items-center justify-center overflow-hidden pointer-events-none">
-        <motion.h1
-          style={{ y: yParallax }}
-          className="text-[23vw] md:text-[23vw] h-150 font-black text-blue-600 italic tracking-tighter opacity-[0.] select-none"
-        >
-          SNEAKER
-        </motion.h1>
-      </div>
-
-        <div className="relative px-6 w-full max-w-md pt-20">
-          <motion.div style={{ rotateX, rotateY }}>
-            <img src="/modal.png" alt="modal.png" className="w-full drop-shadow-2xl" />
-            <Hotspot top={58} left={48} title="Dynamic Ankle" description="Engineered for 360-degree range of motion with anti-roll support." />
-            <Hotspot top={20} left={25} title="Cloud Foam" description="Proprietary nitrogen-infused midsole for maximum energy return." />
-            <Hotspot top={40} left={65} title="Carbon Grip" description="Diamond-cut traction pattern designed for high-speed cuts." />
+    <main className="relative bg-[#050505] text-white overflow-x-hidden selection:bg-blue-600/40">
+      
+      {/* 1. MOBILE MENU - STAGGERED LINKS */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-100 bg-black/95 backdrop-blur-2xl p-8 flex flex-col justify-center items-center md:hidden"
+          >
+            <button onClick={() => setIsMobileMenuOpen(false)} className="absolute top-8 right-8"><X size={32} /></button>
+            <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="flex flex-col items-center gap-8">
+              {['Home', 'Collection', 'Drops', 'Contact'].map(item => (
+                <motion.a 
+                  variants={fadeUp} key={item} href="#" 
+                  className="text-5xl font-black italic tracking-tighter hover:text-blue-500 transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  {item}
+                </motion.a>
+              ))}
+            </motion.div>
           </motion.div>
-        </div>
-      </section>
+        )}
+      </AnimatePresence>
 
-      {/* PRODUCT DETAIL */}
-      <section className="px-6 py-16 border-t border-white/10">
-        <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12">
-          <div className="lg:sticky lg:top-24">
-            <div className="aspect-square bg-zinc-900 rounded-3xl overflow-hidden border border-white/10">
-              <img src={shoes[currentIndex].img} alt={`${shoes[currentIndex].name} sneaker`} className="w-full h-full object-cover" />
-            </div>
-          </div>
-
-          <div className="space-y-10">
-            <div>
-              <h1 className="text-4xl md:text-5xl font-black tracking-tighter">{shoes[currentIndex].name}</h1>
-              <p className="text-3xl text-blue-500 mt-2">{shoes[currentIndex].price}</p>
-            </div>
-
-            <div>
-              <p className="uppercase text-xs tracking-widest mb-4 text-gray-400">Select Size</p>
-              <div className="grid grid-cols-6 gap-3">
-                {sizes.map((size) => (
-                  <button
-                    key={size}
-                    onClick={() => setSelectedSize(size)}
-                    className={`py-4 border rounded-2xl text-sm font-medium transition-all hover:cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${selectedSize === size ? 'border-blue-500 bg-blue-500/10' : 'border-white/20'}`}
-                  >
-                    {size}
-                  </button>
-                ))}
+      {/* 2. CART SIDEBAR - SMOOTH SLIDE */}
+      <AnimatePresence>
+        {isCartOpen && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsCartOpen(false)} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-110" />
+            <motion.div 
+              initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-zinc-900 z-120 p-8 border-l border-white/10 flex flex-col"
+            >
+              <div className="flex justify-between items-center mb-10">
+                <h2 className="text-2xl font-black italic tracking-tighter">BAG ({cartItems.length})</h2>
+                <button onClick={() => setIsCartOpen(false)}><X size={24} /></button>
               </div>
-            </div>
+              <div className="flex-1 overflow-y-auto space-y-6">
+                <AnimatePresence mode="popLayout">
+                  {cartItems.map(item => (
+                    <motion.div 
+                      layout key={item.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+                      className="flex gap-4 border-b border-white/5 pb-6"
+                    >
+                      <img src={item.img} className="w-20 h-20 object-cover rounded-xl" alt="" />
+                      <div className="flex-1">
+                        <h4 className="font-bold">{item.name}</h4>
+                        <p className="text-blue-500 text-sm">{item.price} — Size {item.size}</p>
+                      </div>
+                      <button onClick={() => setCartItems(prev => prev.filter(i => i.id !== item.id))} className="text-zinc-500 hover:text-red-500"><Trash2 size={18}/></button>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+              {cartItems.length > 0 && (
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full mt-10 py-5 bg-blue-600 text-white font-black uppercase tracking-widest rounded-2xl">Checkout Now</motion.button>
+              )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
-            <motion.button onClick={addToCart}
-             disabled={status !== "idle"}
-          whileHover={status === "idle" ? { scale: 1.05 } : {}}
-          whileTap={status === "idle" ? { scale: 0.95 } : {}}
-            className="w-full py-6 bg-white text-black hover:bg-blue-500 hover:text-white font-black uppercase hover:cursor-pointer tracking-widest rounded-2xl text-lg active:scale-[0.97]">
-              ADD TO BAG
-            </motion.button>
+      {/* 3. NAVIGATION - FADE DOWN */}
+      <motion.nav 
+        initial={{ y: -100 }} animate={{ y: 0 }} transition={{ duration: 0.8, ease: "circOut" }}
+        className={`fixed top-0 left-0 right-0 z-50 px-6 py-4 transition-all duration-500 ${isScrolled ? 'bg-black/80 backdrop-blur-xl border-b border-white/5' : ''}`}
+      >
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div className="text-2xl font-black tracking-tighter italic">SNEAK<span className="text-blue-600">ER.</span></div>
+          <div className="hidden md:flex gap-8 text-[10px] font-bold uppercase tracking-[0.2em]">
+            {['Home', 'Collection', 'Contact'].map(link => (
+              <a key={link} href="#" className="hover:text-blue-500 transition-colors relative group">
+                {link}
+                <span className="absolute -bottom-1 left-0 w-0 h-px bg-blue-500 transition-all group-hover:w-full" />
+              </a>
+            ))}
+          </div>
+          <div className="flex items-center gap-4">
+            <button onClick={() => setIsCartOpen(true)} className="relative p-2 hover:bg-white/5 rounded-full transition-colors">
+              <ShoppingCart size={22} />
+              {cartItems.length > 0 && (
+                <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-1 -right-1 bg-blue-600 text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                  {cartItems.length}
+                </motion.span>
+              )}
+            </button>
+            <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden"><Menu size={24} /></button>
           </div>
         </div>
-      </section>
+      </motion.nav>
 
-{/* SECTION 2: FEATURE CARDS */}
-    <section className="relative h-100 w-full py-12 px-12 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10">
-      {[
-        { title: "Ultra Light", desc: "Weighing only 250g for maximum agility.", delay: 0.2, },
-        { title: "Breathable", desc: "Multi-layered mesh for climate control.", delay: 0.4, },
-        { title: "Responsive", desc: "Energy return system like you've never felt.", delay: 0.6 }
-      ].map((feature, i) => (
-        <motion.div
-          key={i}
-          initial={{ opacity: 0.1, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: feature.delay }}
-          className="p-10 bg-white/5 border border-white/10 rounded-3xl backdrop-blur-sm hover:bg-white/10 transition-all cursor-default"
-        >
-          <div className="h-1 w-12 bg-red-500 mb-12" />
-          <h3 className="text-2xl font-bold mb-4 uppercase text-blue-500 tracking-tighter">{feature.title}</h3>
-          <p className="text-white z-50 text-2xl leading-relaxed font-bold">{feature.desc}</p>
-        </motion.div>
-      ))}
-    </section>
-
-    {/* PREMIUM COLLECTION CAROUSEL */}
-<section id="premium-collection" className="relative py-20 bg-black px-6 overflow-hidden">
-  
-  {/* DYNAMIC BACKGROUND LAYER */}
-  <div className="absolute inset-0 z-0">
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={currentIndex}
-        initial={{ opacity: 0, scale: 1.1 }}
-        animate={{ opacity: 0.3, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        transition={{ duration: 1.2, ease: "easeInOut" }}
-        className="absolute inset-0"
-      >
-        {/* Fallback to a placeholder if your local img files are missing */}
-        <img
-          src={shoes[currentIndex % shoes.length].img.startsWith('img') 
-            ? shoes[currentIndex % shoes.length].img 
-            : `https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1000`
-          }
-          className="w-full h-full object-cover grayscale"
-          alt="Background"
-        />
-        {/* Corrected Tailwind Gradient Syntax */}
-        <div className="absolute inset-0 bg-linear-to-b from-black via-transparent to-black" />
-        <div className="absolute inset-0 bg-linear-to-r from-black via-transparent to-black" />
-      </motion.div>
-    </AnimatePresence>
-  </div>
-
-  <div className="max-w-7xl mx-auto relative z-10">
-    <div className="flex justify-between items-end mb-10">
-      <h2 className="text-4xl md:text-5xl font-black tracking-tighter uppercase">
-        <span className="text-blue-700">Premium </span> Collection
-      </h2>
-      <div className="flex gap-4">
-        <button onClick={prevSlide} className="p-4 border border-white/20 rounded-full hover:cursor-pointer hover:bg-white/10 transition-all"><ChevronLeft size={24} /></button>
-        <button onClick={nextSlide} className="p-4 border border-white/20 rounded-full hover:cursor-pointer hover:bg-white/10 transition-all"><ChevronRight size={24} /></button>
-      </div>
-    </div>
-
-    <div className="relative">
-      <motion.div
-        // We move by the exact width of the items (50% per item)
-        animate={{ x: `-${currentIndex * 50}%` }} 
-        transition={{ type: "spring", stiffness: 60, damping: 20 }}
-        className="flex"
-      >
-        {shoes.map((item, i) => (
-          <div key={i} className="w-1/2 md:w-1/3 shrink-0 px-3">
-            <div className="aspect-square bg-zinc-900 rounded-3xl overflow-hidden mb-6 border border-white/10">
-              <img 
-                src={item.img.startsWith('http') ? item.img : `https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?q=80&w=1000`} 
-                alt={item.name} 
-                className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" 
-              />
-            </div>
-            <h3 className="text-xl font-bold tracking-tight">{item.name}</h3>
-            <p className="text-blue-500 text-lg font-medium">{item.price}</p>
-          </div>
-        ))}
-      </motion.div>
-    </div>
-  </div>
-</section>
-
-      {/* WAITLIST */}
-      <section className="min-h-[50vh] flex flex-col items-center justify-center px-6 py-20 text-center">
-        <h2 className="text-5xl md:text-7xl font-black tracking-tighter text-blue-500 mb-12">RUN THE FUTURE</h2>
+      {/* 4. HERO SECTION - ASSEMBLING ANIMATION */}
+      <section className="relative min-h-screen flex flex-col items-center justify-center pt-20" onMouseMove={(e) => mouseX.set(e.clientX - window.innerWidth / 2)}>
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
+          <motion.h1 
+            style={{ y: smoothY }}
+            initial={{ opacity: 0, scale: 1.2 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1.5, ease: "easeOut" }}
+            className="text-[28vw] font-black text-blue-600/10 italic tracking-tighter select-none whitespace-nowrap"
+          >
+            SNEAKER
+          </motion.h1>
+        </div>
         
-        <form onSubmit={handleWaitlistSubmit} className="w-full max-w-md space-y-6">
-          <input
-            type="email"
-            placeholder="ENTER YOUR EMAIL"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full bg-white/5 border border-white/20 rounded-2xl px-8 py-6 text-base focus:outline-none focus:border-blue-500"
-            required
-          />
-         <motion.button
-
-          type="submit"
-
-          disabled={status !== "idle"}
-
-          whileHover={status === "idle" ? { scale: 1.05 } : {}}
-
-          whileTap={status === "idle" ? { scale: 0.95 } : {}}
-
-          className={`relative px-10 py-5 rounded-full font-black uppercase tracking-widest transition-all duration-500 overflow-hidden min-w-45
-
-        ${status === "success" ? "bg-green-500 text-white" : "bg-white text-black hover:bg-blue-500 hover:text-white"}
-
-        ${status === "loading" ? "opacity-70 cursor-wait" : ""}
-
-      `}
-
+        <motion.div 
+          style={{ rotateX, rotateY, perspective: 1000 }}
+          initial={{ opacity: 0, y: 50, rotateX: 20 }} animate={{ opacity: 1, y: 0, rotateX: 0 }} transition={{ duration: 1, delay: 0.5 }}
+          className="relative w-full max-w-[320px] md:max-w-md px-6 z-10"
         >
+          <img src="/modal.png" alt="" className="w-full drop-shadow-[0_20px_50px_rgba(37,99,235,0.3)]" />
+          <Hotspot top={55} left={45} title="Dynamic Ankle" description="Engineered for 360-degree range of motion." />
+          <Hotspot top={25} left={30} title="Cloud Foam" description="Nitrogen-infused midsole for max energy." />
+        </motion.div>
 
-          <AnimatePresence mode="wait">
-
-            {status === "idle" && (
-
-              <motion.span
-
-                key="idle"
-
-                initial={{ opacity: 0, y: 10 }}
-
-                animate={{ opacity: 1, y: 0 }}
-
-                exit={{ opacity: 0, y: -10 }}
-
-              >
-
-                Join Waitlist
-
-              </motion.span>
-
-            )}
-
-            {status === "loading" && (
-
-              <motion.span
-
-                key="loading"
-
-                initial={{ opacity: 0 }}
-
-                animate={{ opacity: 1 }}
-
-                exit={{ opacity: 0 }}
-
-                className="flex items-center justify-center gap-2"
-
-              >
-
-                <div className="h-2 w-2 bg-black animate-bounce rounded-full" />
-
-                <div className="h-2 w-2 bg-black animate-bounce [animation-delay:-0.15s] rounded-full" />
-
-                <div className="h-2 w-2 bg-black animate-bounce [animation-delay:-0.3s] rounded-full" />
-
-              </motion.span>
-
-            )}
-
-            {status === "success" && (
-
-              <motion.span
-
-                key="success"
-
-                initial={{ opacity: 0, scale: 0.5 }}
-
-                animate={{ opacity: 1, scale: 1 }}
-
-                className="flex items-center gap-2"
-
-              >
-
-                Got It! ✓
-
-              </motion.span>
-
-            )}
-
-          </AnimatePresence>
-
-        </motion.button>
-        </form>
+        <motion.div 
+          variants={staggerContainer} initial="hidden" animate="visible"
+          className="mt-12 text-center z-10 px-6"
+        >
+          <motion.p variants={fadeUp} className="text-blue-500 font-bold tracking-[0.3em] text-xs uppercase mb-4">New Era of Performance</motion.p>
+          <motion.h2 variants={fadeUp} className="text-5xl md:text-8xl font-black italic tracking-tighter leading-none mb-8"><span className="text-blue-600">SPEED </span> DEFINED.</motion.h2>
+          <motion.button 
+            variants={fadeUp} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+            className="px-10 py-4 bg-white text-black font-black rounded-full uppercase tracking-widest text-xs hover:bg-blue-600 hover:text-white transition-colors"
+          >
+            Shop the drop
+          </motion.button>
+        </motion.div>
       </section>
 
+      {/* 5. PREMIUM COLLECTION - SCROLL REVEAL */}
+      <motion.section 
+        initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }}
+        id="premium-collection" className="py-24 bg-black border-y border-white/5 overflow-hidden"
+      >
+        <div className="max-w-7xl mx-auto px-6">
+          <motion.div variants={fadeUp} className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+            <div>
+              <h2 className="text-4xl md:text-6xl font-black tracking-tighter italic uppercase leading-none"><span className="text-blue-600 block md:inline">Premium</span> Collection</h2>
+              <p className="text-zinc-500 text-xs font-bold uppercase tracking-[0.3em] mt-4">Auto-cycling newest drops</p>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={prevSlide} className="p-4 border border-white/10 rounded-full hover:bg-white/5 transition-all"><ChevronLeft size={20} /></button>
+              <button onClick={() => { nextSlide(); resetAutoSlide(); }} className="p-4 border border-white/10 rounded-full hover:bg-white/5 transition-all"><ChevronRight size={20} /></button>
+            </div>
+          </motion.div>
+          
+          <div className="relative">
+            <motion.div
+              animate={{ x: `-${currentIndex * (mounted && window.innerWidth < 768 ? 85 : 33.33)}%` }} 
+              transition={{ type: "spring", stiffness: 40, damping: 15 }}
+              className="flex gap-4 md:gap-8"
+              onMouseEnter={() => autoSlideTimer.current && clearInterval(autoSlideTimer.current)}
+              onMouseLeave={startAutoSlide}
+            >
+              {shoes.map((item, i) => (
+                <motion.div 
+                  variants={fadeUp} key={i} className="w-[80%] md:w-[calc(33.33%-1.5rem)] shrink-0 group"
+                >
+                  <div className="aspect-square bg-zinc-900 rounded-[2.5rem] overflow-hidden mb-6 border border-white/5 relative">
+                    <motion.img whileHover={{ scale: 1.1 }} transition={{ duration: 0.6 }} src={item.img} className="w-full h-full object-cover" alt="" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center backdrop-blur-[2px]">
+                      <button onClick={() => setSelectedQuickView(item)} className="bg-white text-black p-4 rounded-full flex items-center gap-2 font-bold uppercase text-[10px] tracking-widest transform scale-90 group-hover:scale-100 transition-all hover:bg-blue-600 hover:text-white">
+                        <Eye size={16} /> Quick View
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-start px-2">
+                    <div>
+                      <h3 className="text-xl font-bold italic tracking-tight">{item.name}</h3>
+                      <p className="text-blue-500 font-bold mt-1">{item.price}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </div>
+      </motion.section>
 
+      {/* QUICK VIEW MODAL - SHARED FEEL */}
+      <AnimatePresence>
+        {selectedQuickView && (
+          <div className="fixed inset-0 z-130 flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedQuickView(null)} className="absolute inset-0 bg-black/80 backdrop-blur-xl" />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative bg-zinc-900 w-full max-w-4xl rounded-[2.5rem] overflow-hidden border border-white/10 flex flex-col md:flex-row shadow-2xl"
+            >
+              <button onClick={() => setSelectedQuickView(null)} className="absolute top-6 right-6 z-10 p-2 bg-black/50 rounded-full hover:bg-white hover:text-black transition-colors"><X size={20}/></button>
+              <img src={selectedQuickView.img} className="w-full md:w-1/2 aspect-square object-cover" alt="" />
+              <div className="p-8 md:p-12 flex flex-col justify-center">
+                <h2 className="text-4xl font-black italic tracking-tighter mb-4">{selectedQuickView.name}</h2>
+                <p className="text-zinc-500 mb-8 text-sm">Experience peak performance with our latest silhouette. Featuring high-rebound cushioning and a breathable upper.</p>
+                <div className="grid grid-cols-3 gap-2 mb-8">
+                  {sizes.map(s => (
+                    <button key={s} onClick={() => setSelectedSize(s)} className={`py-3 rounded-xl border text-xs font-bold transition-all ${selectedSize === s ? 'bg-blue-600 border-blue-600 scale-105' : 'border-white/10 hover:border-white/30'}`}>{s}</button>
+                  ))}
+                </div>
+                <button onClick={() => addToCart(selectedQuickView)} className="w-full py-5 bg-white text-black font-black rounded-2xl uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all disabled:opacity-50" disabled={!selectedSize}>
+                  {selectedSize ? `Add to Bag • ${selectedQuickView.price}` : 'Select Size'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
-<section className="pt-8 gap-2 pb-8 border-t border-white/5">
-    <div className="flex flex-col md:flex-row justify-between items-center">
-      <div className="text-xl font-black tracking-tighter italic">SNEAK<span className="text-blue-600">ER.</span></div>
-      <footer className="py-2 px-2">
-        <div className="text-[10px] uppercase tracking-[0.3em] text-zinc-400">© Developed by Mohammed Girei 2026 Sneaker Inc. All rights reserved.</div>
+      {/* WAITLIST - SCALE ON SCROLL */}
+      <motion.section 
+        initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 1 }}
+        className="py-32 px-6 flex flex-col items-center text-center"
+      >
+        <h2 className="text-5xl md:text-8xl font-black tracking-tighter italic mb-12">RUN <span className="text-blue-600">THE</span> FUTURE.</h2>
+        <form onSubmit={(e) => { e.preventDefault(); setStatus('loading'); setTimeout(() => setStatus('success'), 2000); }} className="w-full max-w-md space-y-4">
+          <input 
+            type="email" required placeholder="EMAIL ADDRESS" value={email} onChange={(e) => setEmail(e.target.value)}
+            className="w-full bg-white/5 border border-white/10 rounded-2xl py-6 px-8 focus:outline-none focus:border-blue-500 transition-colors placeholder:text-zinc-700"
+          />
+          <motion.button 
+            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+            className={`w-full py-6 rounded-2xl font-black uppercase tracking-widest transition-all ${status === 'success' ? 'bg-green-500' : 'bg-white text-black hover:bg-blue-600 hover:text-white'}`}
+          >
+            {status === 'idle' ? "Join the Waitlist" : status === 'loading' ? "Processing..." : "You're in ✓"}
+          </motion.button>
+        </form>
+      </motion.section>
+
+      {/* FOOTER */}
+      <footer className="pt-10 pb-10 px-6 border-t border-white/5">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="text-2xl font-black tracking-tighter italic">SNEAK<span className="text-blue-600">ER.</span></div>
+          <p className="text-[10px] uppercase tracking-[0.3em] text-zinc-500 text-center">© 2026 Sneaker Inc. Developed by Mohammed Girei</p>
+        </div>
       </footer>
-    </div>
-</section>
-
-      {/* Bottom Mobile Nav */}
-      <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] bg-zinc-900/95 backdrop-blur-2xl border border-white/10 py-4 px-8 rounded-3xl flex justify-between z-50">
-        <a href="#" className="text-xs font-bold uppercase tracking-widest">Shop</a>
-        <a href="#premium-collection" className="text-xs font-bold uppercase tracking-widest text-blue-500">Drops</a>
-        <a href="#" className="text-xs font-bold uppercase tracking-widest">Contact</a>
-      </div>
     </main>
   );
 }
