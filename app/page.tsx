@@ -156,7 +156,7 @@ export default function Home() {
 
         <div className="relative px-6 w-full max-w-md pt-20">
           <motion.div style={{ rotateX, rotateY }}>
-            <img src="/modal.png" alt="Premium performance sneaker" className="w-full drop-shadow-2xl" />
+            <img src="/modal.png" alt="modal.png" className="w-full drop-shadow-2xl" />
             <Hotspot top={58} left={48} title="Dynamic Ankle" description="Engineered for 360-degree range of motion with anti-roll support." />
             <Hotspot top={20} left={25} title="Cloud Foam" description="Proprietary nitrogen-infused midsole for maximum energy return." />
             <Hotspot top={40} left={65} title="Carbon Grip" description="Diamond-cut traction pattern designed for high-speed cuts." />
