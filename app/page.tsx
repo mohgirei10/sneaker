@@ -142,6 +142,7 @@ export default function Home() {
 
   if (!mounted) return null;
 
+
   return (
     <main className="relative bg-[#050505] text-white overflow-x-hidden selection:bg-blue-600/40">
       
@@ -351,25 +352,177 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* WAITLIST - SCALE ON SCROLL */}
+{/* SECTION 2: FEATURE CARDS */}
+<section className="relative w-full py-16 px-6 md:px-12 max-w-7xl mx-auto">
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-10">
+    {[
+      { 
+        title: "Ultra Light", 
+        desc: "Weighing only 250g for maximum agility.", 
+        delay: 0.1, 
+        accent: "bg-red-500" 
+      },
+      { 
+        title: "Breathable", 
+        desc: "Multi-layered mesh for climate control.", 
+        delay: 0.2, 
+        accent: "bg-blue-500" 
+      },
+      { 
+        title: "Responsive", 
+        desc: "Energy return system like you've never felt.", 
+        delay: 0.3, 
+        accent: "bg-green-500" 
+      }
+    ].map((feature, i) => (
+      <motion.div
+        key={i}
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-50px" }}
+        transition={{ 
+          duration: 0.8, 
+          delay: feature.delay, 
+          ease: [0.22, 1, 0.36, 1] 
+        }}
+        whileHover={{ y: -5 }}
+        className="relative group p-8 md:p-10 bg-white/3 border border-white/10 rounded-[2.5rem] backdrop-blur-md overflow-hidden transition-colors hover:bg-white/[0.07]"
+      >
+        {/* Subtle Gradient Glow */}
+        <div className="absolute -right-10 -top-10 w-32 h-32 bg-blue-600/10 blur-[50px] group-hover:bg-blue-600/20 transition-all" />
+
+        {/* Decorative Accent Bar */}
+        <div className={`h-1 w-10 md:w-12 ${feature.accent} mb-8 rounded-full`} />
+        
+        <h3 className="text-sm md:text-xs font-black uppercase text-blue-500 tracking-[0.2em] mb-3">
+          {feature.title}
+        </h3>
+        
+        <p className="text-white text-xl md:text-2xl leading-tight font-bold tracking-tight italic">
+          {feature.desc}
+        </p>
+
+        {/* Mobile Touch Indicator (only visible on mobile) */}
+        <div className="mt-6 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-zinc-500 md:hidden">
+          <span>Explore Tech</span>
+          <div className="h-px flex-1 bg-white/10" />
+        </div>
+      </motion.div>
+    ))}
+  </div>
+</section>
+
       <motion.section 
         initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 1 }}
         className="py-32 px-6 flex flex-col items-center text-center"
       >
         <h2 className="text-5xl md:text-8xl font-black tracking-tighter italic mb-12">RUN <span className="text-blue-600">THE</span> FUTURE.</h2>
-        <form onSubmit={(e) => { e.preventDefault(); setStatus('loading'); setTimeout(() => setStatus('success'), 2000); }} className="w-full max-w-md space-y-4">
+        <form onSubmit={(e: React.FormEvent<HTMLFormElement>) => { 
+    e.preventDefault(); 
+    setStatus('loading'); 
+    setTimeout(() => setStatus('success'), 2000); 
+  }} className="w-full max-w-md space-y-4">
           <input 
             type="email" required placeholder="EMAIL ADDRESS" value={email} onChange={(e) => setEmail(e.target.value)}
             className="w-full bg-white/5 border border-white/10 rounded-2xl py-6 px-8 focus:outline-none focus:border-blue-500 transition-colors placeholder:text-zinc-700"
           />
-          <motion.button 
-            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-            className={`w-full py-6 rounded-2xl font-black uppercase tracking-widest transition-all ${status === 'success' ? 'bg-green-500' : 'bg-white text-black hover:bg-blue-600 hover:text-white'}`}
-          >
-            {status === 'idle' ? "Join the Waitlist" : status === 'loading' ? "Processing..." : "You're in ✓"}
-          </motion.button>
+        <motion.button
+
+          type="submit"
+
+          disabled={status !== "idle"}
+
+          whileHover={status === "idle" ? { scale: 1.05 } : {}}
+
+          whileTap={status === "idle" ? { scale: 0.95 } : {}}
+
+          className={`relative px-10 py-5 rounded-full font-black uppercase tracking-widest transition-all duration-500 overflow-hidden min-w-45
+
+        ${status === "success" ? "bg-green-500 text-white" : "bg-white text-black hover:bg-blue-500 hover:text-white"}
+
+        ${status === "loading" ? "opacity-70 cursor-wait" : ""}
+
+      `}
+
+        >
+
+          <AnimatePresence mode="wait">
+
+            {status === "idle" && (
+
+              <motion.span
+
+                key="idle"
+
+                initial={{ opacity: 0, y: 10 }}
+
+                animate={{ opacity: 1, y: 0 }}
+
+                exit={{ opacity: 0, y: -10 }}
+
+              >
+
+                Join Waitlist
+
+              </motion.span>
+
+            )}
+
+            {status === "loading" && (
+
+              <motion.span
+
+                key="loading"
+
+                initial={{ opacity: 0 }}
+
+                animate={{ opacity: 1 }}
+
+                exit={{ opacity: 0 }}
+
+                className="flex items-center justify-center gap-2"
+
+              >
+
+                <div className="h-2 w-2 bg-black animate-bounce rounded-full" />
+
+                <div className="h-2 w-2 bg-black animate-bounce [animation-delay:-0.15s] rounded-full" />
+
+                <div className="h-2 w-2 bg-black animate-bounce [animation-delay:-0.3s] rounded-full" />
+
+              </motion.span>
+
+            )}
+
+            {status === "success" && (
+
+              <motion.span
+
+                key="success"
+
+                initial={{ opacity: 0, scale: 0.5 }}
+
+                animate={{ opacity: 1, scale: 1 }}
+
+                className="flex items-center gap-2"
+
+              >
+
+                Got It! ✓
+
+              </motion.span>
+
+            )}
+
+          </AnimatePresence>
+
+        </motion.button>
         </form>
       </motion.section>
+
+      
+  
+
 
       {/* FOOTER */}
       <footer className="pt-10 pb-10 px-6 border-t border-white/5">
