@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence, useTransform, useScroll, useMotionValue, useSpring } from "framer-motion";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, Key, ReactNode } from "react";
 import { ChevronLeft, ChevronRight, ShoppingCart, Menu, X, Eye, Info, Trash2 } from "lucide-react";
 import { 
   SiInstagram, 
@@ -9,7 +9,7 @@ import {
   SiGithub, 
   SiFacebook 
 } from "react-icons/si";
-
+import Image from 'next/image';
 import { Variants } from "framer-motion"; // Add this to your imports
 
 // 1. Explicitly type as Variants
@@ -39,7 +39,10 @@ const staggerContainer = {
 } as const;
 
 // --- TYPES ---
-type Shoe = { name: string; price: string; img: string };
+type Shoe = {
+  size: ReactNode;
+  id: Key | null | undefined; name: string; price: string; img: string 
+};
 type CartItem = Shoe & { id: string; size: string };
 
 // --- COMPONENTS ---
@@ -108,29 +111,77 @@ const [copied, setCopied] = useState(false);
 ];
 
   const shoes: Shoe[] = [
-      { name: "Phantom Black", price: "$240", img: "img1.jpg"  },
+      {
+        name: "Phantom Black", price: "$240", img: "img1.jpg",
+        id: 1,
+        size: undefined
+      },
 
-    { name: "Neon Volt", price: "$260", img: "img2.jpg" },
+    {
+      name: "Neon Volt", price: "$260", img: "img11.jpg",
+      id: 2,
+      size: undefined
+    },
 
-    { name: "Arctic White", price: "$220", img: "img3.jpg" },
+    {
+      name: "Arctic White", price: "$220", img: "img4.jpg",
+      id: 3,
+      size: undefined
+    },
 
-    { name: "Midnight Blue", price: "$250", img: "img4.jpg" },
+    {
+      name: "Midnight Blue", price: "$250", img: "img12.jpg",
+      id: 4,
+      size: undefined
+    },
 
-    { name: "Crimson Red", price: "$245", img: "img5.jpg" },
+    {
+      name: "Crimson Red", price: "$245", img: "img7.jpg",
+      id: 5,
+      size: undefined
+    },
 
-    { name: "Cyber Grey", price: "$270", img: "img6.jpg"},
+    {
+      name: "Cyber Grey", price: "$270", img: "img9.jpg",
+      id: 6,
+      size: undefined
+    },
 
-    { name: "Phantom Black", price: "$240", img: "img7.jpg" },
+    {
+      name: "Desert Storm", price: "$240", img: "img6.jpg",
+      id: 7,
+      size: undefined
+    },
 
-    { name: "Neon Volt", price: "$260", img: "img8.jpg" },
+    {
+      name: "White Red", price: "$260", img: "img8.jpg",
+      id: 8,
+      size: undefined
+    },
 
-    { name: "Arctic White", price: "$220", img: "img9.jpg" },
+    {
+      name: "Ywllow White", price: "$220", img: "img2.jpg",
+      id: 9,
+      size: undefined
+    },
 
-    { name: "Midnight Blue", price: "$250", img: "img10.jpg" },
+    {
+      name: "Brown White ", price: "$250", img: "img3.jpg",
+      id: 10,
+      size: undefined
+    },
 
-    { name: "Crimson Red", price: "$245", img: "img11.jpg" },
+    {
+      name: "Cindy Peach ", price: "$245", img: "img5.jpg",
+      id: 11,
+      size: undefined
+    },
 
-    { name: "Cyber Grey", price: "$270", img: "img12.jpg" }
+    {
+      name: "Greench Lemon", price: "$270", img: "img10.jpg",
+      id: 12,
+      size: undefined
+    }
   ];
 
   const sizes = ["US 7", "US 8", "US 9", "US 10", "US 11", "US 12"];
@@ -156,7 +207,7 @@ const [copied, setCopied] = useState(false);
   }, []);
 
 const copyToClipboard = () => {
-    navigator.clipboard.writeText("yourname@email.com");
+    navigator.clipboard.writeText("amgtech1@gmail.com");
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -176,7 +227,7 @@ const copyToClipboard = () => {
           >
             <button onClick={() => setIsMobileMenuOpen(false)} className="absolute top-8 right-8"><X size={32} /></button>
             <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="flex flex-col items-center gap-8">
-              {['Home', 'Collection', 'Drops', 'Contact'].map(item => (
+              {['Home', 'Collection', 'Contact'].map(item => (
                 <motion.a 
                   variants={fadeUp} key={item} href="#" 
                   className="text-5xl font-black italic tracking-tighter hover:text-blue-500 transition-colors"
@@ -206,13 +257,24 @@ const copyToClipboard = () => {
               </div>
               <div className="flex-1 overflow-y-auto space-y-6">
                 <AnimatePresence mode="popLayout">
-                  {cartItems.map(item => (
+                     {shoes.map((item, idx) => (  
                     <motion.div 
-                      layout key={item.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+                      layout 
+                      key={idx} // Change from item.id to idx
+                      initial={{ opacity: 0, x: 20 }} 
+                      animate={{ opacity: 1, x: 0 }} 
+                      exit={{ opacity: 0, x: -20 }}
                       className="flex gap-4 border-b border-white/5 pb-6"
                     >
-                      <img src={item.img} className="w-20 h-20 object-cover rounded-xl" alt="" />
-                      <div className="flex-1">
+                      <Image 
+                      src={`/${item.img}`} 
+                      alt={item.name}
+                      fill // This makes it fill the parent container
+                      className="object-cover group-hover:scale-110 transition-transform duration-700"
+                      sizes="(max-w-768px) 80vw, 33vw" // Tells browser which size to download
+                      priority={idx < 3} // Only load the first 3 images immediately
+  />
+                        <div className="flex-1">
                         <h4 className="font-bold">{item.name}</h4>
                         <p className="text-blue-500 text-sm">{item.price} — Size {item.size}</p>
                       </div>
@@ -273,9 +335,15 @@ const copyToClipboard = () => {
         <motion.div 
           style={{ rotateX, rotateY, perspective: 1000 }}
           initial={{ opacity: 0, y: 50, rotateX: 20 }} animate={{ opacity: 1, y: 0, rotateX: 0 }} transition={{ duration: 1, delay: 0.5 }}
-          className="relative w-full max-w-[320px] md:max-w-md px-6 z-10"
+          className="relative w-full max-w-[320px] md:max-w-md px-6 z-10 transform-gpu"
         >
-          <img src="/modal.png" alt="" className="w-full drop-shadow-[0_20px_50px_rgba(37,99,235,0.3)]" />
+           <Image 
+               src="/modal.png" 
+               alt="Hero Sneaker" 
+               width={500} 
+               height={500} 
+               priority 
+               className="w-full drop-shadow-[0_20px_50px_rgba(37,99,235,0.3)]"/>       
           <Hotspot top={55} left={45} title="Dynamic Ankle" description="Engineered for 360-degree range of motion." />
           <Hotspot top={25} left={30} title="Cloud Foam" description="Nitrogen-infused midsole for max energy." />
         </motion.div>
@@ -298,7 +366,7 @@ const copyToClipboard = () => {
       {/* 5. PREMIUM COLLECTION - SCROLL REVEAL */}
       <motion.section 
         initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }}
-        id="premium-collection" className="py-24 bg-black border-y border-white/5 overflow-hidden"
+        id="collection" className="py-24 bg-black border-y border-white/5 overflow-hidden"
       >
         <div className="max-w-7xl mx-auto px-6">
           <motion.div variants={fadeUp} className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
@@ -307,8 +375,8 @@ const copyToClipboard = () => {
               <p className="text-zinc-500 text-xs font-bold uppercase tracking-[0.3em] mt-4">Auto-cycling newest drops</p>
             </div>
             <div className="flex gap-2">
-              <button onClick={prevSlide} className="p-4 border border-white/10 rounded-full hover:bg-white/5 transition-all"><ChevronLeft size={20} /></button>
-              <button onClick={() => { nextSlide(); resetAutoSlide(); }} className="p-4 border border-white/10 rounded-full hover:bg-white/5 transition-all"><ChevronRight size={20} /></button>
+              <button onClick={prevSlide} className="p-4 border border-white/10 rounded-full hover:cursor-pointer hover:bg-white/5 transition-all"><ChevronLeft size={20} /></button>
+              <button onClick={() => { nextSlide(); resetAutoSlide(); }} className="p-4 border hover:cursor-pointer border-white/10 rounded-full hover:bg-white/5 transition-all"><ChevronRight size={20} /></button>
             </div>
           </motion.div>
           
@@ -327,8 +395,8 @@ const copyToClipboard = () => {
                   <div className="aspect-square bg-zinc-900 rounded-[2.5rem] overflow-hidden mb-6 border border-white/5 relative">
                     <motion.img whileHover={{ scale: 1.1 }} transition={{ duration: 0.6 }} src={item.img} className="w-full h-full object-cover" alt="" />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center backdrop-blur-[2px]">
-                      <button onClick={() => setSelectedQuickView(item)} className="bg-white text-black p-4 rounded-full flex items-center gap-2 font-bold uppercase text-[10px] tracking-widest transform scale-90 group-hover:scale-100 transition-all hover:bg-blue-600 hover:text-white">
-                        <Eye size={16} /> Quick View
+                      <button onClick={() => setSelectedQuickView(item)} className="bg-white text-black p-4 rounded-full flex items-center gap-2 hover:cursor-pointer font-bold uppercase text-[10px] tracking-widest transform scale-90 group-hover:scale-100 transition-all hover:bg-blue-600 hover:text-white">
+                        <Eye size={16} />View
                       </button>
                     </div>
                   </div>
@@ -542,7 +610,7 @@ const copyToClipboard = () => {
       </motion.section>
 
 {/* CONTACT SECTION */}
-<section className="py-20 md:py-32 px-6 border-t border-white/5 bg-[#080808] overflow-hidden">
+<section id="contact" className="py-20 md:py-32 px-6 border-t border-white/5 bg-[#080808] overflow-hidden">
   <div className="max-w-7xl mx-auto">
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 md:gap-24 items-start">
       
@@ -588,7 +656,7 @@ const copyToClipboard = () => {
         {/* The "Master" Email Button */}
         <motion.button
           onClick={copyToClipboard}
-          className="w-full p-6 md:p-10 bg-blue-600 rounded-4xl flex flex-col items-center justify-center gap-2 group relative overflow-hidden shadow-[0_20px_40px_rgba(37,99,235,0.2)] hover:shadow-[0_25px_50px_rgba(37,99,235,0.4)] transition-all duration-500"
+          className="w-full p-5 md:p-10 bg-blue-600 rounded-4xl flex flex-col items-center justify-center group relative overflow-hidden shadow-[0_20px_40px_rgba(37,99,235,0.2)] hover:shadow-[0_25px_50px_rgba(37,99,235,0.4)] hover:cursor-pointer transition-all duration-500"
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.98 }}
         >
@@ -599,7 +667,7 @@ const copyToClipboard = () => {
             {copied ? "Email Copied!" : "Drop a Message"}
           </span>
           <span className="text-white/70 text-xs md:text-sm font-bold z-10 tracking-tight">
-            {copied ? "Ready to paste" : "babsgirei@email.com"}
+            {copied ? "Ready to paste" : ""}
           </span>
 
           {/* Animated background flash on copy */}
