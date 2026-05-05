@@ -3,6 +3,12 @@
 import { motion, AnimatePresence, useTransform, useScroll, useMotionValue, useSpring } from "framer-motion";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { ChevronLeft, ChevronRight, ShoppingCart, Menu, X, Eye, Info, Trash2 } from "lucide-react";
+import { 
+  SiInstagram, 
+  SiX, 
+  SiGithub, 
+  SiFacebook 
+} from "react-icons/si";
 
 import { Variants } from "framer-motion"; // Add this to your imports
 
@@ -31,7 +37,6 @@ const staggerContainer = {
     }
   }
 } as const;
-
 
 // --- TYPES ---
 type Shoe = { name: string; price: string; img: string };
@@ -83,6 +88,9 @@ export default function Home() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedQuickView, setSelectedQuickView] = useState<Shoe | null>(null);
 
+const [copied, setCopied] = useState(false);
+
+
   const autoSlideTimer = useRef<NodeJS.Timeout | null>(null);
   const { scrollY } = useScroll();
   
@@ -91,6 +99,13 @@ export default function Home() {
   const mouseX = useMotionValue(0);
   const rotateX = useSpring(useTransform(mouseX, [-500, 500], [7, -7]), { stiffness: 50, damping: 20 });
   const rotateY = useSpring(useTransform(mouseX, [-500, 500], [-7, 7]), { stiffness: 50, damping: 20 });
+
+  const socialLinks = [
+  { id: 1, name: "Instagram", icon: <SiInstagram />, link: "https://instagram.com/yourhandle", color: "#E1306C" },
+  { id: 2, name: "X", icon: <SiX />, link: "https://x.com/yourhandle", color: "#FFFFFF" },
+  { id: 4, name: "GitHub", icon: <SiGithub />, link: "https://github.com/yourhandle", color: "#2ea44f" },
+  { id: 5, name: "Facebook", icon: <SiFacebook />, link: "https://facebook.com/yourhandle", color: "#1877F2" },
+];
 
   const shoes: Shoe[] = [
       { name: "Phantom Black", price: "$240", img: "img1.jpg"  },
@@ -139,6 +154,12 @@ export default function Home() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+const copyToClipboard = () => {
+    navigator.clipboard.writeText("yourname@email.com");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   if (!mounted) return null;
 
@@ -267,7 +288,7 @@ export default function Home() {
           <motion.h2 variants={fadeUp} className="text-5xl md:text-8xl font-black italic tracking-tighter leading-none mb-8"><span className="text-blue-600">SPEED </span> DEFINED.</motion.h2>
           <motion.button 
             variants={fadeUp} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-            className="px-10 py-4 bg-white text-black font-black rounded-full uppercase tracking-widest text-xs hover:bg-blue-600 hover:text-white transition-colors"
+            className="px-10 py-4 bg-white text-black font-black rounded-full uppercase tracking-widest text-xs hover:bg-blue-600 hover:text-white transition-colors shadow-[0_0_20px_rgba(37,99,235,0.5)] hover:cursor-pointer hover:shadow-[0_0_35px_rgba(37,99,235,0.8)] duration-300"
           >
             Shop the drop
           </motion.button>
@@ -436,7 +457,7 @@ export default function Home() {
 
           whileTap={status === "idle" ? { scale: 0.95 } : {}}
 
-          className={`relative px-10 py-5 rounded-full font-black uppercase tracking-widest transition-all duration-500 overflow-hidden min-w-45
+          className={`relative px-10 py-5 rounded-full font-black uppercase tracking-widest transition-all duration-500 overflow-hidden hover:cursor-pointer min-w-45 shadow-[0_0_20px_rgba(37,99,235,0.5)] hover:shadow-[0_0_35px_rgba(37,99,235,0.8)]
 
         ${status === "success" ? "bg-green-500 text-white" : "bg-white text-black hover:bg-blue-500 hover:text-white"}
 
@@ -520,9 +541,93 @@ export default function Home() {
         </form>
       </motion.section>
 
+{/* CONTACT SECTION */}
+<section className="py-20 md:py-32 px-6 border-t border-white/5 bg-[#080808] overflow-hidden">
+  <div className="max-w-7xl mx-auto">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 md:gap-24 items-start">
       
-  
+      {/* Left Side: Big Text */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="text-left"
+      >
+        <h2 className="text-5xl md:text-8xl font-black italic tracking-tighter mb-6 leading-none">
+          LET'S <span className="text-blue-600">TALK.</span>
+        </h2>
+        <p className="text-zinc-500 text-base md:text-lg max-w-sm font-medium leading-relaxed">
+          Open for collaborations, custom drops, and high-performance engineering inquiries.
+        </p>
+      </motion.div>
 
+      {/* Right Side: Interaction Hub */}
+      <div className="flex flex-col gap-8 w-full">
+        
+        {/* Social Icons Grid */}
+        <div className="grid grid-cols-5 gap-2 md:gap-4">
+          {socialLinks.map((social) => (
+            <motion.a
+              key={social.id}
+              href={social.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              whileHover={{ 
+                scale: 1.1, 
+                y: -5,
+                color: social.color,
+              }}
+              whileTap={{ scale: 0.9 }}
+              className="aspect-square flex items-center justify-center bg-white/3 border border-white/5 rounded-2xl text-white/40 text-2xl md:text-3xl transition-all duration-300 hover:border-white/20"
+            >
+              {social.icon}
+            </motion.a>
+          ))}
+        </div>
+
+        {/* The "Master" Email Button */}
+        <motion.button
+          onClick={copyToClipboard}
+          className="w-full p-6 md:p-10 bg-blue-600 rounded-4xl flex flex-col items-center justify-center gap-2 group relative overflow-hidden shadow-[0_20px_40px_rgba(37,99,235,0.2)] hover:shadow-[0_25px_50px_rgba(37,99,235,0.4)] transition-all duration-500"
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          {/* Subtle Glow Layer */}
+          <div className="absolute inset-0 bg-linear-to-tr from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          
+          <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.4em] z-10">
+            {copied ? "Email Copied!" : "Drop a Message"}
+          </span>
+          <span className="text-white/70 text-xs md:text-sm font-bold z-10 tracking-tight">
+            {copied ? "Ready to paste" : "babsgirei@email.com"}
+          </span>
+
+          {/* Animated background flash on copy */}
+          <AnimatePresence>
+            {copied && (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-green-500 flex items-center justify-center z-20"
+              >
+                <span className="font-black italic tracking-tighter text-white text-xl">COPIED ✓</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.button>
+
+        {/* Mobile Availability Badge */}
+        <div className="flex items-center gap-3 px-2">
+          <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-600">
+            Currently accepting new projects
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
       {/* FOOTER */}
       <footer className="pt-10 pb-10 px-6 border-t border-white/5">
@@ -531,6 +636,7 @@ export default function Home() {
           <p className="text-[10px] uppercase tracking-[0.3em] text-zinc-500 text-center">© 2026 Sneaker Inc. Developed by Mohammed Girei</p>
         </div>
       </footer>
+
     </main>
   );
 }
